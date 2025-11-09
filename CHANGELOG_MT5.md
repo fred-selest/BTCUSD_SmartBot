@@ -4,6 +4,64 @@ Historique des versions et modifications
 
 ---
 
+## Version 1.05 (2025-11-09)
+
+### 🐛 Correction Critique - Grid Lot Multiplier
+
+- ✅ **CORRECTIF MAJEUR : Multiplicateur de lot Grid ne s'appliquait pas**
+  - **Problème** : Tous les niveaux de grid utilisaient le même lot (0.01)
+  - **Cause** : `baseLot` était recalculé pour chaque niveau au lieu d'utiliser le lot du niveau 0
+  - **Solution** : Utilisation de `initialLotSize` (sauvegardé au niveau 0) pour niveaux 1+
+
+### 🔧 Modifications Techniques
+
+**OpenGridLevel()** - Correction du calcul de lot :
+```mql5
+// AVANT (v1.04) - INCORRECT
+double baseLot = CalculateLotSize(price, sl);  // Recalculé à chaque niveau
+
+// APRÈS (v1.05) - CORRECT
+if(gridLevel == 0)
+   baseLot = CalculateLotSize(price, sl);  // Calculé une fois
+else
+   baseLot = initialLotSize;  // Réutilisé pour niveaux 1+
+```
+
+### 📊 Impact sur le Trading
+
+**Exemple avec InpGridLotMultiplier=1.2** :
+
+v1.04 (bug) :
+- Level 0: 0.01
+- Level 1: 0.01 ❌
+- Level 2: 0.01 ❌
+
+v1.05 (corrigé) :
+- Level 0: 0.01 ✅
+- Level 1: 0.012 (0.01 × 1.2¹) ✅
+- Level 2: 0.0144 (0.01 × 1.2²) ✅
+
+### ⚠️ Impact Important
+
+**Cette correction augmente le risque par Grid !**
+- Exposition totale PLUS ÉLEVÉE qu'en v1.04
+- Avec 3 niveaux et multi 1.2: **Total lot = 0.01 + 0.012 + 0.0144 = 0.0364**
+- En v1.04 (bug): Total = 0.01 + 0.01 + 0.01 = 0.03
+- **Différence : +21% d'exposition**
+
+**Recommandations URGENTES** :
+1. **Réduire InpGridLotMultiplier** : 1.0 (constant) ou 1.1 max pour démarrer
+2. **Réduire InpMaxGridLevels** : 2 au lieu de 3
+3. **Augmenter capital minimum** : 2000+ EUR recommandé
+4. **TESTER EN DEMO** avant live avec nouveaux paramètres
+
+### 📁 Archivage
+
+- Version 1.04 archivée dans `versions/BTCUSD_SmartBot_Pro_v1.04.mq5`
+- Toutes les versions futures seront archivées automatiquement
+
+---
+
 ## Version 1.04 (2025-11-09)
 
 ### 🐛 Correction Critique - Grid Trading
@@ -313,5 +371,5 @@ Pour toute question sur les versions :
 ---
 
 **Dernière mise à jour** : 2025-11-09
-**Version actuelle** : 1.04
-**Statut** : Stable ✅ (Grid Trading corrigé - Tester en DEMO)
+**Version actuelle** : 1.05
+**Statut** : Stable ✅ (Grid Lot Multiplier corrigé - TESTER EN DEMO avec paramètres réduits)
