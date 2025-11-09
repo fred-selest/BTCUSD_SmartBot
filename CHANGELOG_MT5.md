@@ -4,6 +4,45 @@ Historique des versions et modifications
 
 ---
 
+## Version 1.03 (2025-11-09)
+
+### 🎲 Nouvelles Fonctionnalités Majeures
+
+- ✅ **GRID TRADING** - Système de grille contrôlée
+  - Ouvre plusieurs niveaux de positions à distances fixes
+  - Distance configurable en ATR (ex: 1.0 ATR entre chaque niveau)
+  - Multiplicateur de lot personnalisable (1.0 = constant, 1.5 = augmentation progressive)
+  - Maximum 5 niveaux configurables (3 recommandé)
+
+- ✅ **MARTINGALE CONTROLÉE** - Gestion des pertes avec sécurité
+  - Augmente la taille du lot après chaque perte
+  - Multiplicateur configurable (1.3-2.0, recommandé: 1.5)
+  - Limitation stricte du nombre de niveaux (max 5, recommandé: 3)
+  - Reset automatique après un trade gagnant
+
+- ✅ **PROTECTION DRAWDOWN** - Sécurité maximale
+  - Arrêt automatique du trading si drawdown dépasse limite
+  - Configurable (défaut: 20%)
+  - Calcul basé sur le plus haut equity atteint
+  - Alerte visuelle et dans les logs
+
+### ⚠️ Avertissements Importants
+
+- **Grid et Martingale augmentent le risque** - À utiliser avec prudence
+- **Capital minimum recommandé** : 1000+ EUR pour Grid/Martingale
+- **Toujours tester en DEMO** avant utilisation live
+- **Drawdown peut être élevé** - Respecter les limites
+- **Par défaut désactivé** - Doit être activé manuellement
+
+### 🎯 Impact
+
+- **Flexibilité** : 3 modes de trading (Classique, Grid, Martingale)
+- **Contrôle** : Limites strictes pour sécurité
+- **Performance** : Potentiel de profit accru avec risque contrôlé
+- **Compatibilité** : 100% compatible avec modes précédents
+
+---
+
 ## Version 1.02 (2025-11-09)
 
 ### 🐛 Corrections de Bugs Critiques

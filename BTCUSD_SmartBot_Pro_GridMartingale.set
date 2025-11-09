@@ -1,0 +1,35 @@
+; Fichier de paramètres pour BTCUSD_SmartBot_Pro
+; Version : 1.03
+; Configuration GRID + MARTINGALE (Avancé)
+; ⚠️ RISQUE ELEVE - Utiliser avec prudence
+
+InpRiskPercent=0.5
+InpMaxPositions=1
+InpMinBalance=500.0
+InpFastEMA=9
+InpSlowEMA=21
+InpATRPeriod=14
+InpATR_MultiplierTP=3.0
+InpATR_MultiplierSL=1.5
+InpMinATR=50.0
+InpMaxSpread=15000
+InpStartHour=0
+InpEndHour=23
+InpUseTrailing=true
+InpTrailActivation=0.7
+InpTrailDistance=0.3
+InpUseBreakeven=true
+InpBreakevenTrigger=0.5
+InpUseGrid=true
+InpMaxGridLevels=3
+InpGridStepATR=1.0
+InpGridLotMultiplier=1.2
+InpUseMartingale=true
+InpMartingaleMulti=1.3
+InpMaxMartingale=2
+InpMaxDrawdownPct=15.0
+InpUseH4Confirmation=false
+InpMagicNumber=202511
+InpSlippage=10
+InpTradeComment=BTC_GridMartingale
+InpShowPanel=true
