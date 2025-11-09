@@ -11,20 +11,63 @@ Professional trading bot available in **two versions**: Python (for exchanges vi
 
 ---
 
+## 📁 Structure du Projet
+
+```
+BTCUSD_SmartBot/
+│
+├── 📂 Version Python - Pour Exchanges Crypto/
+│   ├── btc_smartbot.py          # Bot principal Python
+│   ├── config.py                # Configuration Python
+│   ├── indicators.py            # Indicateurs techniques
+│   ├── risk_manager.py          # Gestion du risque
+│   ├── trailing_stop.py         # Trailing stop
+│   ├── example_backtest.py      # Exemple backtesting
+│   ├── requirements.txt         # Dépendances Python
+│   └── README.md                # Guide Python détaillé
+│
+├── 📂 configuration set/
+│   ├── BTCUSD_SmartBot_Pro_Default.set
+│   ├── BTCUSD_SmartBot_Pro_Conservative.set
+│   ├── BTCUSD_SmartBot_Pro_Aggressive.set
+│   ├── BTCUSD_SmartBot_Pro_FxPro.set
+│   ├── BTCUSD_SmartBot_Pro_Grid.set
+│   ├── BTCUSD_SmartBot_Pro_Martingale.set
+│   ├── BTCUSD_SmartBot_Pro_GridMartingale.set
+│   └── README.md                # Guide configurations MT5
+│
+├── 📂 versions/
+│   ├── BTCUSD_SmartBot_Pro_v1.04.mq5
+│   ├── BTCUSD_SmartBot_Pro_v1.05.mq5
+│   └── README.md                # Guide archivage versions
+│
+├── 🤖 BTCUSD_SmartBot_Pro.mq5   # Bot MT5 (version actuelle: 1.05)
+├── 📖 README_MT5.md             # Guide MT5 détaillé
+├── 📖 GUIDE_INSTALLATION_MT5.md # Installation MT5
+├── 📖 QUICK_START_MT5.md        # Démarrage rapide MT5
+├── 📖 README_FXPRO.md           # Guide FxPro broker
+├── 📝 CHANGELOG_MT5.md          # Historique versions MT5
+└── 📄 LICENSE                   # Licence MIT
+```
+
+---
+
 ## 📦 Deux Versions Disponibles
 
 ### 🐍 Version Python - Pour Exchanges Crypto
-**Fichiers** : `btc_smartbot.py`, `indicators.py`, `risk_manager.py`, etc.
+**Dossier** : `Version Python - Pour Exchanges Crypto/`
 - ✅ Compatible avec **100+ exchanges** (Binance, Kraken, etc.) via CCXT
 - ✅ Paper trading et testnet
 - ✅ Flexible et personnalisable
-- 📖 [**Guide Python**](#python-version-for-crypto-exchanges) (voir ci-dessous)
+- 📖 [**Guide Python Complet**](Version%20Python%20-%20Pour%20Exchanges%20Crypto/README.md)
 
 ### 🖥️ Version MetaTrader 5 - Pour Brokers Forex
-**Fichiers** : `BTCUSD_SmartBot_Pro.mq5` + fichiers `.set`
+**Fichiers** : `BTCUSD_SmartBot_Pro.mq5` + dossier `configuration set/`
 - ✅ Compatible **VPS Windows Server 2022**
+- ✅ **Grid Trading & Martingale** contrôlés (v1.05)
 - ✅ Interface graphique intégrée
-- ✅ Optimisé pour BTCUSD sur MT5
+- ✅ 7 configurations prédéfinies
+- ✅ Système d'archivage de versions
 - 📖 [**Guide MT5 Complet**](README_MT5.md) | [**Installation**](GUIDE_INSTALLATION_MT5.md)
 
 > **💡 Quelle version choisir ?**
@@ -84,18 +127,23 @@ git clone https://github.com/yourusername/BTCUSD_SmartBot.git
 cd BTCUSD_SmartBot
 ```
 
-2. **Install dependencies**
+2. **Navigate to Python version folder**
+```bash
+cd "Version Python - Pour Exchanges Crypto"
+```
+
+3. **Install dependencies**
 ```bash
 pip install -r requirements.txt
 ```
 
-3. **Configure environment**
+4. **Configure environment**
 ```bash
 cp .env.example .env
 # Edit .env with your API credentials
 ```
 
-4. **Run the bot**
+5. **Run the bot**
 ```bash
 # Paper trading mode (recommended for testing)
 python btc_smartbot.py
@@ -151,10 +199,12 @@ TELEGRAM_CHAT_ID=your_chat_id
 
 ---
 
-## 📚 Project Structure
+## 📚 Version Python - Structure des Fichiers
+
+Tous les fichiers Python se trouvent dans le dossier `Version Python - Pour Exchanges Crypto/` :
 
 ```
-BTCUSD_SmartBot/
+Version Python - Pour Exchanges Crypto/
 │
 ├── btc_smartbot.py          # Main trading bot
 ├── config.py                 # Configuration settings
@@ -165,8 +215,7 @@ BTCUSD_SmartBot/
 │
 ├── requirements.txt          # Python dependencies
 ├── .env.example             # Environment template
-├── .gitignore               # Git ignore rules
-└── README.md                # This file
+└── README.md                # Guide détaillé version Python
 ```
 
 ---
