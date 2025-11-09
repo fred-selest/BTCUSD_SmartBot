@@ -4,6 +4,33 @@ Historique des versions et modifications
 
 ---
 
+## Version 1.02 (2025-11-09)
+
+### 🐛 Corrections de Bugs Critiques
+
+- ✅ **CORRECTIF : Array out of range** lors du backtest
+  - Les données des indicateurs sont maintenant copiées AVANT les vérifications
+  - Ordre des opérations corrigé dans `OnTick()`
+  - Ajout de vérification de sécurité sur `atrBuffer` avant accès
+
+- ✅ **AMÉLIORATION : Gestion du spread**
+  - Réduction du spam de logs quand spread élevé (1 message/heure max)
+  - Meilleure gestion des symboles non-standard (BITCOIN, BTCUSD, etc.)
+
+### 🔧 Améliorations Techniques
+
+- Vérification `ArraySize()` avant accès aux buffers
+- Protection contre les erreurs de données manquantes
+- Optimisation des logs pour backtesting
+
+### 🎯 Impact
+
+- **Backtest** : Fonctionne maintenant sans erreur
+- **Performance** : Pas d'impact sur la vitesse d'exécution
+- **Compatibilité** : 100% compatible avec v1.01 et v1.00
+
+---
+
 ## Version 1.01 (2025-11-09)
 
 ### 🎨 Interface
