@@ -5,9 +5,9 @@
 //+------------------------------------------------------------------+
 #property copyright "BTCUSD SmartBot Pro"
 #property link      "https://github.com/fred-selest/BTCUSD_SmartBot"
-#property version   "1.05"
+#property version   "1.04"
 #property description "Bot BTCUSD avec stratégie EMA, ATR, Trailing Stop intelligent"
-#property description "Grid Lot Multiplier Fix - VPS Windows Server 2022"
+#property description "Grid Fix: Ordres pending (BuyLimit/SellLimit) - VPS Windows Server 2022"
 
 //--- Includes
 #include <Trade\Trade.mqh>
@@ -179,7 +179,7 @@ int OnInit()
 
    //--- Affichage des informations
    Print("═══════════════════════════════════════════════════════");
-   Print("🤖 BTCUSD SmartBot Pro v1.05 - Initialisé avec succès");
+   Print("🤖 BTCUSD SmartBot Pro v1.04 - Initialisé avec succès");
    Print("═══════════════════════════════════════════════════════");
    Print("📊 Symbole: ", _Symbol);
    Print("💰 Balance: ", DoubleToString(accountInfo.Balance(), 2), " ", accountInfo.Currency());
@@ -812,26 +812,15 @@ bool OpenGridLevel(string direction, double price, double atr, int gridLevel)
    double tpDistance = atr * InpATR_MultiplierTP;
 
    // Calculer le lot (avec grid multiplier et martingale si activée)
-   double baseLot = 0;
-
-   if(gridLevel == 0)
-   {
-      // Premier niveau : calculer le lot basé sur le risque
-      baseLot = CalculateLotSize(price,
-                                 direction == "BUY" ? price - slDistance : price + slDistance);
-
-      // Sauvegarder pour les niveaux suivants
-      if(initialLotSize == 0)
-         initialLotSize = baseLot;
-   }
-   else
-   {
-      // Niveaux 1+ : utiliser le lot initial du niveau 0
-      baseLot = initialLotSize;
-   }
+   double baseLot = CalculateLotSize(price,
+                                     direction == "BUY" ? price - slDistance : price + slDistance);
 
    double gridLot = CalculateGridLot(baseLot, gridLevel);
    double finalLot = CalculateMartingaleLot(gridLot, consecutiveLosses);
+
+   // Sauvegarder le lot initial si premier niveau
+   if(gridLevel == 0 && initialLotSize == 0)
+      initialLotSize = baseLot;
 
    // Préparer l'ordre
    double sl = 0, tp = 0;
