@@ -4,6 +4,47 @@ Historique des versions et modifications
 
 ---
 
+## Version 1.04 (2025-11-09)
+
+### 🐛 Correction Critique - Grid Trading
+
+- ✅ **CORRECTIF MAJEUR : Grid Orders non créés**
+  - Les ordres Grid niveaux 1, 2, 3+ sont maintenant correctement créés comme ordres pending
+  - **BuyLimit** utilisé pour les grilles d'achat (sous le prix d'entrée)
+  - **SellLimit** utilisé pour les grilles de vente (au-dessus du prix d'entrée)
+  - Niveau 0 reste un ordre au marché (immédiat)
+  - Niveaux 1+ sont des ordres en attente qui se déclenchent quand le prix les atteint
+
+### 🔧 Modifications Techniques
+
+**OpenGridLevel()** :
+- Séparation logique niveau 0 (marché) vs niveaux 1+ (pending)
+- `trade.Buy()` / `trade.Sell()` pour niveau 0
+- `trade.BuyLimit()` / `trade.SellLimit()` pour niveaux 1+
+- Affichage du type d'ordre (MARKET ou LIMIT) dans les logs
+- Gestion d'erreur améliorée avec messages explicites
+
+**PlaceGridOrders()** :
+- Fonction maintenant fonctionnelle (était vide dans v1.03)
+- Crée réellement les ordres pending pour chaque niveau de grille
+- Logs détaillés de création de chaque niveau
+
+### 📊 Impact
+
+- **v1.03 → v1.04** : Backtest passera de 1 seul trade à 3 trades (avec 3 niveaux de grid)
+- **Martingale** : Fonctionnera maintenant correctement en combinaison avec Grid
+- **Risque** : Grid fonctionne maintenant comme prévu - ATTENTION au drawdown
+
+### ⚠️ Avertissement Important
+
+**Cette correction rend le Grid Trading pleinement opérationnel !**
+- Si vous utilisiez v1.03 avec `InpUseGrid=true`, vous n'aviez qu'un seul ordre
+- Avec v1.04, vous aurez TOUS les niveaux de grid (1-5 configurables)
+- **Augmente significativement l'exposition** - Réduire `InpMaxGridLevels` si nécessaire
+- **Tester ABSOLUMENT en DEMO** avant live avec cette version
+
+---
+
 ## Version 1.03 (2025-11-09)
 
 ### 🎲 Nouvelles Fonctionnalités Majeures
@@ -272,5 +313,5 @@ Pour toute question sur les versions :
 ---
 
 **Dernière mise à jour** : 2025-11-09
-**Version actuelle** : 1.01
-**Statut** : Stable ✅
+**Version actuelle** : 1.04
+**Statut** : Stable ✅ (Grid Trading corrigé - Tester en DEMO)

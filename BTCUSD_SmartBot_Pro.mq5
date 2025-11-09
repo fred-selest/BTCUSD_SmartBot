@@ -5,9 +5,9 @@
 //+------------------------------------------------------------------+
 #property copyright "BTCUSD SmartBot Pro"
 #property link      "https://github.com/fred-selest/BTCUSD_SmartBot"
-#property version   "1.03"
+#property version   "1.04"
 #property description "Bot BTCUSD avec stratégie EMA, ATR, Trailing Stop intelligent"
-#property description "Grid Trading & Martingale contrôlée - VPS Windows Server 2022"
+#property description "Grid Fix: Ordres pending (BuyLimit/SellLimit) - VPS Windows Server 2022"
 
 //--- Includes
 #include <Trade\Trade.mqh>
@@ -179,7 +179,7 @@ int OnInit()
 
    //--- Affichage des informations
    Print("═══════════════════════════════════════════════════════");
-   Print("🤖 BTCUSD SmartBot Pro v1.03 - Initialisé avec succès");
+   Print("🤖 BTCUSD SmartBot Pro v1.04 - Initialisé avec succès");
    Print("═══════════════════════════════════════════════════════");
    Print("📊 Symbole: ", _Symbol);
    Print("💰 Balance: ", DoubleToString(accountInfo.Balance(), 2), " ", accountInfo.Currency());
@@ -832,31 +832,69 @@ bool OpenGridLevel(string direction, double price, double atr, int gridLevel)
    if(InpUseMartingale && consecutiveLosses > 0)
       comment = comment + "_M" + IntegerToString(consecutiveLosses);
 
+   // Normaliser le prix
+   price = NormalizeDouble(price, _Digits);
+
    // Exécuter l'ordre
    bool success = false;
    ulong ticket = 0;
 
    if(direction == "BUY")
    {
-      sl = price - slDistance;
-      tp = price + tpDistance;
-      success = trade.Buy(finalLot, _Symbol, price, sl, tp, comment);
+      sl = NormalizeDouble(price - slDistance, _Digits);
+      tp = NormalizeDouble(price + tpDistance, _Digits);
+
+      // Level 0 : Ordre au marché
+      // Level 1+ : Ordre limite (BuyLimit) sous le prix actuel
+      if(gridLevel == 0)
+      {
+         success = trade.Buy(finalLot, _Symbol, 0, sl, tp, comment);
+      }
+      else
+      {
+         // BuyLimit : ordre d'achat en dessous du prix de marché
+         success = trade.BuyLimit(finalLot, price, _Symbol, sl, tp, ORDER_TIME_GTC, 0, comment);
+      }
+
       ticket = trade.ResultOrder();
 
       if(success)
-         Print("🟢 Grid BUY Level ", gridLevel, " | Lot: ", finalLot,
-               " | Entry: ", price, " | M-Level: ", consecutiveLosses);
+      {
+         string orderType = (gridLevel == 0) ? "MARKET" : "LIMIT";
+         Print("🟢 Grid BUY Level ", gridLevel, " (", orderType, ") | Lot: ", finalLot,
+               " | Entry: ", price, " | SL: ", sl, " | TP: ", tp, " | M-Level: ", consecutiveLosses);
+      }
    }
    else // SELL
    {
-      sl = price + slDistance;
-      tp = price - tpDistance;
-      success = trade.Sell(finalLot, _Symbol, price, sl, tp, comment);
+      sl = NormalizeDouble(price + slDistance, _Digits);
+      tp = NormalizeDouble(price - tpDistance, _Digits);
+
+      // Level 0 : Ordre au marché
+      // Level 1+ : Ordre limite (SellLimit) au-dessus du prix actuel
+      if(gridLevel == 0)
+      {
+         success = trade.Sell(finalLot, _Symbol, 0, sl, tp, comment);
+      }
+      else
+      {
+         // SellLimit : ordre de vente au-dessus du prix de marché
+         success = trade.SellLimit(finalLot, price, _Symbol, sl, tp, ORDER_TIME_GTC, 0, comment);
+      }
+
       ticket = trade.ResultOrder();
 
       if(success)
-         Print("🔴 Grid SELL Level ", gridLevel, " | Lot: ", finalLot,
-               " | Entry: ", price, " | M-Level: ", consecutiveLosses);
+      {
+         string orderType = (gridLevel == 0) ? "MARKET" : "LIMIT";
+         Print("🔴 Grid SELL Level ", gridLevel, " (", orderType, ") | Lot: ", finalLot,
+               " | Entry: ", price, " | SL: ", sl, " | TP: ", tp, " | M-Level: ", consecutiveLosses);
+      }
+   }
+
+   if(!success)
+   {
+      Print("❌ Erreur création Grid Level ", gridLevel, ": ", trade.ResultRetcodeDescription());
    }
 
    return success;
@@ -872,19 +910,19 @@ void PlaceGridOrders(string direction, double entryPrice, double atr)
 
    double gridStep = atr * InpGridStepATR;
 
-   // Placer les niveaux de grille
+   // Placer les niveaux de grille (ordres pending)
    for(int level = 1; level < InpMaxGridLevels; level++)
    {
       double gridPrice = 0;
 
       if(direction == "BUY")
       {
-         // Pour les achats, placer des ordres en dessous
+         // Pour les achats, placer des BuyLimit en dessous du prix d'entrée
          gridPrice = entryPrice - (gridStep * level);
       }
       else // SELL
       {
-         // Pour les ventes, placer des ordres au-dessus
+         // Pour les ventes, placer des SellLimit au-dessus du prix d'entrée
          gridPrice = entryPrice + (gridStep * level);
       }
 
@@ -893,9 +931,17 @@ void PlaceGridOrders(string direction, double entryPrice, double atr)
       if(existingLevels >= level + 1)
          continue;
 
-      // Note: Dans MT5, on ouvre directement les positions
-      // Pour un vrai grid, il faudrait utiliser des ordres pending
-      // Cette version simplifie en ouvrant au marché quand le prix atteint le niveau
+      // Créer l'ordre pending pour ce niveau de grid
+      bool success = OpenGridLevel(direction, gridPrice, atr, level);
+
+      if(success)
+      {
+         Print("📊 Grid Level ", level, " créé à ", DoubleToString(gridPrice, _Digits));
+      }
+      else
+      {
+         Print("⚠️ Échec création Grid Level ", level);
+      }
    }
 }
 
