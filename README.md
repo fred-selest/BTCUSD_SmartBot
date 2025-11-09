@@ -1,12 +1,39 @@
 # 🤖 BTCUSD SmartBot
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
+[![MT5](https://img.shields.io/badge/MetaTrader-5-blue.svg)](https://www.metatrader5.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 **Intelligent Bitcoin Trading Bot with EMA Strategy and ATR-based Risk Management**
 
-Inspired by the professional MQL5 BTCUSD_SmartBot_v2.mq5, this Python implementation brings advanced algorithmic trading to cryptocurrency exchanges with a focus on risk management and intelligent position sizing.
+Professional trading bot available in **two versions**: Python (for exchanges via CCXT) and MetaTrader 5 (for MT5 brokers).
+
+---
+
+## 📦 Deux Versions Disponibles
+
+### 🐍 Version Python - Pour Exchanges Crypto
+**Fichiers** : `btc_smartbot.py`, `indicators.py`, `risk_manager.py`, etc.
+- ✅ Compatible avec **100+ exchanges** (Binance, Kraken, etc.) via CCXT
+- ✅ Paper trading et testnet
+- ✅ Flexible et personnalisable
+- 📖 [**Guide Python**](#python-version-for-crypto-exchanges) (voir ci-dessous)
+
+### 🖥️ Version MetaTrader 5 - Pour Brokers Forex
+**Fichiers** : `BTCUSD_SmartBot_Pro.mq5` + fichiers `.set`
+- ✅ Compatible **VPS Windows Server 2022**
+- ✅ Interface graphique intégrée
+- ✅ Optimisé pour BTCUSD sur MT5
+- 📖 [**Guide MT5 Complet**](README_MT5.md) | [**Installation**](GUIDE_INSTALLATION_MT5.md)
+
+> **💡 Quelle version choisir ?**
+> - **Python** → Si vous tradez sur exchanges crypto (Binance, Coinbase, etc.)
+> - **MT5** → Si vous avez un broker MetaTrader 5 et VPS Windows
+
+---
+
+# 🐍 Python Version - For Crypto Exchanges
 
 ---
 

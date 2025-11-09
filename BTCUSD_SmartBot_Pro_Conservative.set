@@ -1,0 +1,26 @@
+; Fichier de paramètres pour BTCUSD_SmartBot_Pro
+; Version : 1.00
+; Configuration CONSERVATRICE - Risque minimal
+
+InpRiskPercent=0.5
+InpMaxPositions=1
+InpMinBalance=100.0
+InpFastEMA=9
+InpSlowEMA=21
+InpATRPeriod=14
+InpATR_MultiplierTP=2.5
+InpATR_MultiplierSL=2.0
+InpMinATR=60.0
+InpMaxSpread=80
+InpStartHour=8
+InpEndHour=20
+InpUseTrailing=true
+InpTrailActivation=1.5
+InpTrailDistance=0.7
+InpUseBreakeven=true
+InpBreakevenTrigger=0.3
+InpUseH4Confirmation=true
+InpMagicNumber=202511
+InpSlippage=10
+InpTradeComment=BTC_Conservative
+InpShowPanel=true
