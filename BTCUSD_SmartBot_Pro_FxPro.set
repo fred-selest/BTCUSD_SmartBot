@@ -1,0 +1,27 @@
+; Fichier de paramètres pour BTCUSD_SmartBot_Pro
+; Version : 1.02
+; Configuration FXPRO - Symbole BITCOIN
+; Optimisé pour le spread élevé de FxPro
+
+InpRiskPercent=1.0
+InpMaxPositions=1
+InpMinBalance=100.0
+InpFastEMA=9
+InpSlowEMA=21
+InpATRPeriod=14
+InpATR_MultiplierTP=2.5
+InpATR_MultiplierSL=1.5
+InpMinATR=50.0
+InpMaxSpread=15000
+InpStartHour=0
+InpEndHour=23
+InpUseTrailing=true
+InpTrailActivation=1.0
+InpTrailDistance=0.5
+InpUseBreakeven=true
+InpBreakevenTrigger=0.5
+InpUseH4Confirmation=true
+InpMagicNumber=202511
+InpSlippage=10
+InpTradeComment=BTC_FxPro
+InpShowPanel=true
