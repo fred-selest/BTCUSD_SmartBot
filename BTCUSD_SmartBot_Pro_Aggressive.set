@@ -1,0 +1,26 @@
+; Fichier de paramètres pour BTCUSD_SmartBot_Pro
+; Version : 1.00
+; Configuration AGGRESSIVE - Plus de signaux (⚠️ Plus de risque)
+
+InpRiskPercent=2.0
+InpMaxPositions=2
+InpMinBalance=100.0
+InpFastEMA=9
+InpSlowEMA=21
+InpATRPeriod=14
+InpATR_MultiplierTP=3.0
+InpATR_MultiplierSL=1.5
+InpMinATR=30.0
+InpMaxSpread=120
+InpStartHour=0
+InpEndHour=23
+InpUseTrailing=true
+InpTrailActivation=0.7
+InpTrailDistance=0.3
+InpUseBreakeven=true
+InpBreakevenTrigger=0.5
+InpUseH4Confirmation=false
+InpMagicNumber=202511
+InpSlippage=15
+InpTradeComment=BTC_Aggressive
+InpShowPanel=true
