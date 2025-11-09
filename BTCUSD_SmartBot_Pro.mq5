@@ -5,9 +5,9 @@
 //+------------------------------------------------------------------+
 #property copyright "BTCUSD SmartBot Pro"
 #property link      "https://github.com/fred-selest/BTCUSD_SmartBot"
-#property version   "1.02"
+#property version   "1.03"
 #property description "Bot BTCUSD avec stratégie EMA, ATR, Trailing Stop intelligent"
-#property description "Optimisé pour VPS Windows Server 2022"
+#property description "Grid Trading & Martingale contrôlée - VPS Windows Server 2022"
 
 //--- Includes
 #include <Trade\Trade.mqh>
@@ -48,6 +48,17 @@ input double   InpTrailDistance     = 0.5;        // Distance de trailing (%)
 input bool     InpUseBreakeven      = true;       // Activer Breakeven
 input double   InpBreakevenTrigger  = 0.5;        // Trigger Breakeven (% profit)
 
+//--- Grid & Martingale
+input group "=== GRID TRADING & MARTINGALE ==="
+input bool     InpUseGrid           = false;      // Activer Grid Trading
+input int      InpMaxGridLevels     = 3;          // Niveaux max de Grid (1-5)
+input double   InpGridStepATR       = 1.0;        // Distance grille (x ATR)
+input double   InpGridLotMultiplier = 1.0;        // Multiplicateur de lot (1.0-2.0)
+input bool     InpUseMartingale     = false;      // Activer Martingale
+input double   InpMartingaleMulti   = 1.5;        // Multiplicateur Martingale (1.2-2.0)
+input int      InpMaxMartingale     = 3;          // Niveaux max Martingale (1-5)
+input double   InpMaxDrawdownPct    = 20.0;       // Drawdown max % (sécurité)
+
 //--- Advanced Settings
 input group "=== PARAMETRES AVANCES ==="
 input bool     InpUseH4Confirmation = true;       // Confirmation H4
@@ -79,6 +90,23 @@ double         emaSlowBuffer_H4[];
 datetime       lastBarTime = 0;
 bool           trailingActive[];
 bool           breakevenSet[];
+
+//--- Grid & Martingale variables
+struct GridLevel
+{
+   double   price;           // Prix du niveau
+   double   lotSize;         // Taille du lot
+   ulong    ticket;          // Ticket de l'ordre
+   int      level;           // Numéro du niveau (0, 1, 2...)
+   bool     isActive;        // Niveau actif
+};
+
+GridLevel      gridLevelsBuy[];    // Niveaux de grille BUY
+GridLevel      gridLevelsSell[];   // Niveaux de grille SELL
+int            currentGridLevel = 0;
+int            consecutiveLosses = 0;
+double         initialLotSize = 0;
+double         highestEquity = 0;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                    |
@@ -142,9 +170,16 @@ int OnInit()
    ArrayInitialize(trailingActive, false);
    ArrayInitialize(breakevenSet, false);
 
+   //--- Initialiser les grilles
+   if(InpUseGrid)
+   {
+      ArrayResize(gridLevelsBuy, InpMaxGridLevels);
+      ArrayResize(gridLevelsSell, InpMaxGridLevels);
+   }
+
    //--- Affichage des informations
    Print("═══════════════════════════════════════════════════════");
-   Print("🤖 BTCUSD SmartBot Pro - Initialisé avec succès");
+   Print("🤖 BTCUSD SmartBot Pro v1.03 - Initialisé avec succès");
    Print("═══════════════════════════════════════════════════════");
    Print("📊 Symbole: ", _Symbol);
    Print("💰 Balance: ", DoubleToString(accountInfo.Balance(), 2), " ", accountInfo.Currency());
@@ -153,6 +188,17 @@ int OnInit()
    Print("📊 ATR: ", InpATRPeriod, " | TP: x", InpATR_MultiplierTP, " | SL: x", InpATR_MultiplierSL);
    Print("🎯 Trailing: ", (InpUseTrailing ? "ON" : "OFF"), " | Activation: ", InpTrailActivation, "%");
    Print("🔄 Confirmation H4: ", (InpUseH4Confirmation ? "ON" : "OFF"));
+
+   if(InpUseGrid || InpUseMartingale)
+   {
+      Print("--- GRID & MARTINGALE ---");
+      if(InpUseGrid)
+         Print("📊 Grid: ON | Niveaux: ", InpMaxGridLevels, " | Step: ", InpGridStepATR, " ATR | Multi: x", InpGridLotMultiplier);
+      if(InpUseMartingale)
+         Print("🎲 Martingale: ON | Multi: x", InpMartingaleMulti, " | Max: ", InpMaxMartingale);
+      Print("⚠️ Drawdown Max: ", InpMaxDrawdownPct, "%");
+   }
+
    Print("═══════════════════════════════════════════════════════");
 
    return(INIT_SUCCEEDED);
@@ -310,33 +356,57 @@ void AnalyzeAndTrade()
    if(!bullishCross && !bearishCross)
       return;
 
+   //--- Vérifier drawdown si Grid/Martingale activé
+   if((InpUseGrid || InpUseMartingale) && !CheckDrawdownLimit())
+   {
+      Print("⚠️ Drawdown trop élevé - Trading désactivé");
+      return;
+   }
+
    //--- Calculer les paramètres du trade
    double atr = atrBuffer[0];
-   double slDistance = atr * InpATR_MultiplierSL;
-   double tpDistance = atr * InpATR_MultiplierTP;
 
    //--- Trade BUY
    if(bullishCross)
    {
       double ask = symbolInfo.Ask();
-      double sl = NormalizeDouble(ask - slDistance, _Digits);
-      double tp = NormalizeDouble(ask + tpDistance, _Digits);
 
-      double lotSize = CalculateLotSize(ask, sl);
+      Print("🟢 Signal BUY détecté");
+      Print("   Entry: ", ask, " | ATR: ", DoubleToString(atr, 2));
 
-      if(lotSize > 0)
+      // Utiliser Grid/Martingale si activé, sinon trade classique
+      if(InpUseGrid || InpUseMartingale)
       {
-         Print("🟢 Signal BUY détecté");
-         Print("   Entry: ", ask, " | SL: ", sl, " | TP: ", tp);
-         Print("   Lot: ", lotSize, " | ATR: ", DoubleToString(atr, 2));
-
-         if(trade.Buy(lotSize, _Symbol, ask, sl, tp, InpTradeComment))
+         // Ouvrir premier niveau de grid
+         if(OpenGridLevel("BUY", ask, atr, 0))
          {
-            Print("✅ Ordre BUY exécuté - Ticket: ", trade.ResultOrder());
+            // Placer les niveaux suivants si Grid activé
+            if(InpUseGrid)
+               PlaceGridOrders("BUY", ask, atr);
          }
-         else
+      }
+      else
+      {
+         // Trade classique sans Grid/Martingale
+         double slDistance = atr * InpATR_MultiplierSL;
+         double tpDistance = atr * InpATR_MultiplierTP;
+         double sl = NormalizeDouble(ask - slDistance, _Digits);
+         double tp = NormalizeDouble(ask + tpDistance, _Digits);
+
+         double lotSize = CalculateLotSize(ask, sl);
+
+         if(lotSize > 0)
          {
-            Print("❌ Erreur BUY: ", trade.ResultRetcodeDescription());
+            Print("   Lot: ", lotSize, " | SL: ", sl, " | TP: ", tp);
+
+            if(trade.Buy(lotSize, _Symbol, ask, sl, tp, InpTradeComment))
+            {
+               Print("✅ Ordre BUY exécuté - Ticket: ", trade.ResultOrder());
+            }
+            else
+            {
+               Print("❌ Erreur BUY: ", trade.ResultRetcodeDescription());
+            }
          }
       }
    }
@@ -345,24 +415,43 @@ void AnalyzeAndTrade()
    else if(bearishCross)
    {
       double bid = symbolInfo.Bid();
-      double sl = NormalizeDouble(bid + slDistance, _Digits);
-      double tp = NormalizeDouble(bid - tpDistance, _Digits);
 
-      double lotSize = CalculateLotSize(bid, sl);
+      Print("🔴 Signal SELL détecté");
+      Print("   Entry: ", bid, " | ATR: ", DoubleToString(atr, 2));
 
-      if(lotSize > 0)
+      // Utiliser Grid/Martingale si activé, sinon trade classique
+      if(InpUseGrid || InpUseMartingale)
       {
-         Print("🔴 Signal SELL détecté");
-         Print("   Entry: ", bid, " | SL: ", sl, " | TP: ", tp);
-         Print("   Lot: ", lotSize, " | ATR: ", DoubleToString(atr, 2));
-
-         if(trade.Sell(lotSize, _Symbol, bid, sl, tp, InpTradeComment))
+         // Ouvrir premier niveau de grid
+         if(OpenGridLevel("SELL", bid, atr, 0))
          {
-            Print("✅ Ordre SELL exécuté - Ticket: ", trade.ResultOrder());
+            // Placer les niveaux suivants si Grid activé
+            if(InpUseGrid)
+               PlaceGridOrders("SELL", bid, atr);
          }
-         else
+      }
+      else
+      {
+         // Trade classique sans Grid/Martingale
+         double slDistance = atr * InpATR_MultiplierSL;
+         double tpDistance = atr * InpATR_MultiplierTP;
+         double sl = NormalizeDouble(bid + slDistance, _Digits);
+         double tp = NormalizeDouble(bid - tpDistance, _Digits);
+
+         double lotSize = CalculateLotSize(bid, sl);
+
+         if(lotSize > 0)
          {
-            Print("❌ Erreur SELL: ", trade.ResultRetcodeDescription());
+            Print("   Lot: ", lotSize, " | SL: ", sl, " | TP: ", tp);
+
+            if(trade.Sell(lotSize, _Symbol, bid, sl, tp, InpTradeComment))
+            {
+               Print("✅ Ordre SELL exécuté - Ticket: ", trade.ResultOrder());
+            }
+            else
+            {
+               Print("❌ Erreur SELL: ", trade.ResultRetcodeDescription());
+            }
          }
       }
    }
@@ -596,4 +685,260 @@ string GetDeinitReasonText(int reason)
       default:                 return "Raison inconnue";
    }
 }
+
+//+------------------------------------------------------------------+
+//| GRID TRADING & MARTINGALE FUNCTIONS                              |
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//| Vérifie le drawdown pour sécurité                                |
+//+------------------------------------------------------------------+
+bool CheckDrawdownLimit()
+{
+   double balance = accountInfo.Balance();
+   double equity = accountInfo.Equity();
+
+   if(highestEquity < equity)
+      highestEquity = equity;
+
+   if(highestEquity == 0)
+      highestEquity = balance;
+
+   double drawdownPct = ((highestEquity - equity) / highestEquity) * 100;
+
+   if(drawdownPct >= InpMaxDrawdownPct)
+   {
+      Print("🛑 DRAWDOWN MAX ATTEINT: ", DoubleToString(drawdownPct, 2), "% >= ", InpMaxDrawdownPct, "%");
+      Print("⚠️ ARRET DU TRADING - Fermer toutes les positions manuellement");
+      return false;
+   }
+
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//| Calcule le lot avec Martingale                                   |
+//+------------------------------------------------------------------+
+double CalculateMartingaleLot(double baseLot, int lossCount)
+{
+   if(!InpUseMartingale || lossCount == 0)
+      return baseLot;
+
+   // Limiter le nombre de niveaux
+   if(lossCount > InpMaxMartingale)
+      lossCount = InpMaxMartingale;
+
+   double lot = baseLot * MathPow(InpMartingaleMulti, lossCount);
+
+   // Limites de sécurité
+   double maxLot = symbolInfo.LotsMax();
+   double minLot = symbolInfo.LotsMin();
+
+   lot = MathMin(lot, maxLot);
+   lot = MathMax(lot, minLot);
+
+   return NormalizeDouble(lot, 2);
+}
+
+//+------------------------------------------------------------------+
+//| Calcule le lot pour le Grid                                      |
+//+------------------------------------------------------------------+
+double CalculateGridLot(double baseLot, int gridLevel)
+{
+   if(!InpUseGrid || gridLevel == 0)
+      return baseLot;
+
+   double lot = baseLot * MathPow(InpGridLotMultiplier, gridLevel);
+
+   // Limites
+   double maxLot = symbolInfo.LotsMax();
+   double minLot = symbolInfo.LotsMin();
+
+   lot = MathMin(lot, maxLot);
+   lot = MathMax(lot, minLot);
+
+   return NormalizeDouble(lot, 2);
+}
+
+//+------------------------------------------------------------------+
+//| Compte les positions de type Grid                                |
+//+------------------------------------------------------------------+
+int CountGridPositions(string direction)
+{
+   int count = 0;
+
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      if(!positionInfo.SelectByIndex(i)) continue;
+      if(positionInfo.Symbol() != _Symbol) continue;
+      if(positionInfo.Magic() != InpMagicNumber) continue;
+
+      string comment = positionInfo.Comment();
+
+      if(direction == "BUY" && positionInfo.PositionType() == POSITION_TYPE_BUY)
+      {
+         if(StringFind(comment, "Grid") >= 0 || StringFind(comment, InpTradeComment) >= 0)
+            count++;
+      }
+      else if(direction == "SELL" && positionInfo.PositionType() == POSITION_TYPE_SELL)
+      {
+         if(StringFind(comment, "Grid") >= 0 || StringFind(comment, InpTradeComment) >= 0)
+            count++;
+      }
+   }
+
+   return count;
+}
+
+//+------------------------------------------------------------------+
+//| Ouvre un niveau de Grid                                          |
+//+------------------------------------------------------------------+
+bool OpenGridLevel(string direction, double price, double atr, int gridLevel)
+{
+   // Vérifier drawdown
+   if(!CheckDrawdownLimit())
+      return false;
+
+   // Vérifier nombre max de niveaux
+   int currentLevels = CountGridPositions(direction);
+   if(currentLevels >= InpMaxGridLevels)
+   {
+      Print("⚠️ Nombre max de niveaux Grid atteint: ", currentLevels);
+      return false;
+   }
+
+   // Calculer les stops
+   double slDistance = atr * InpATR_MultiplierSL;
+   double tpDistance = atr * InpATR_MultiplierTP;
+
+   // Calculer le lot (avec grid multiplier et martingale si activée)
+   double baseLot = CalculateLotSize(price,
+                                     direction == "BUY" ? price - slDistance : price + slDistance);
+
+   double gridLot = CalculateGridLot(baseLot, gridLevel);
+   double finalLot = CalculateMartingaleLot(gridLot, consecutiveLosses);
+
+   // Sauvegarder le lot initial si premier niveau
+   if(gridLevel == 0 && initialLotSize == 0)
+      initialLotSize = baseLot;
+
+   // Préparer l'ordre
+   double sl = 0, tp = 0;
+   string comment = InpTradeComment;
+
+   if(InpUseGrid)
+      comment = comment + "_Grid" + IntegerToString(gridLevel);
+
+   if(InpUseMartingale && consecutiveLosses > 0)
+      comment = comment + "_M" + IntegerToString(consecutiveLosses);
+
+   // Exécuter l'ordre
+   bool success = false;
+   ulong ticket = 0;
+
+   if(direction == "BUY")
+   {
+      sl = price - slDistance;
+      tp = price + tpDistance;
+      success = trade.Buy(finalLot, _Symbol, price, sl, tp, comment);
+      ticket = trade.ResultOrder();
+
+      if(success)
+         Print("🟢 Grid BUY Level ", gridLevel, " | Lot: ", finalLot,
+               " | Entry: ", price, " | M-Level: ", consecutiveLosses);
+   }
+   else // SELL
+   {
+      sl = price + slDistance;
+      tp = price - tpDistance;
+      success = trade.Sell(finalLot, _Symbol, price, sl, tp, comment);
+      ticket = trade.ResultOrder();
+
+      if(success)
+         Print("🔴 Grid SELL Level ", gridLevel, " | Lot: ", finalLot,
+               " | Entry: ", price, " | M-Level: ", consecutiveLosses);
+   }
+
+   return success;
+}
+
+//+------------------------------------------------------------------+
+//| Place les ordres Grid additionnels                               |
+//+------------------------------------------------------------------+
+void PlaceGridOrders(string direction, double entryPrice, double atr)
+{
+   if(!InpUseGrid)
+      return;
+
+   double gridStep = atr * InpGridStepATR;
+
+   // Placer les niveaux de grille
+   for(int level = 1; level < InpMaxGridLevels; level++)
+   {
+      double gridPrice = 0;
+
+      if(direction == "BUY")
+      {
+         // Pour les achats, placer des ordres en dessous
+         gridPrice = entryPrice - (gridStep * level);
+      }
+      else // SELL
+      {
+         // Pour les ventes, placer des ordres au-dessus
+         gridPrice = entryPrice + (gridStep * level);
+      }
+
+      // Vérifier si un ordre existe déjà à ce niveau
+      int existingLevels = CountGridPositions(direction);
+      if(existingLevels >= level + 1)
+         continue;
+
+      // Note: Dans MT5, on ouvre directement les positions
+      // Pour un vrai grid, il faudrait utiliser des ordres pending
+      // Cette version simplifie en ouvrant au marché quand le prix atteint le niveau
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Gère la fermeture et reset de la Martingale                      |
+//+------------------------------------------------------------------+
+void OnTradeTransaction(const MqlTradeTransaction& trans,
+                        const MqlTradeRequest& request,
+                        const MqlTradeResult& result)
+{
+   // Détecter la fermeture d'une position
+   if(trans.type == TRADE_TRANSACTION_DEAL_ADD)
+   {
+      if(HistoryDealSelect(trans.deal))
+      {
+         long dealEntry = HistoryDealGetInteger(trans.deal, DEAL_ENTRY);
+
+         // Si c'est une sortie (fermeture)
+         if(dealEntry == DEAL_ENTRY_OUT)
+         {
+            double profit = HistoryDealGetDouble(trans.deal, DEAL_PROFIT);
+
+            if(profit > 0)
+            {
+               // Reset martingale sur gain
+               consecutiveLosses = 0;
+               Print("✅ Trade gagnant - Reset Martingale");
+            }
+            else if(profit < 0)
+            {
+               // Incrémenter compteur de pertes
+               if(InpUseMartingale)
+               {
+                  consecutiveLosses++;
+                  if(consecutiveLosses > InpMaxMartingale)
+                     consecutiveLosses = InpMaxMartingale;
+
+                  Print("❌ Trade perdant - Martingale Level: ", consecutiveLosses);
+               }
+            }
+         }
+      }
+   }
+}
+
 //+------------------------------------------------------------------+

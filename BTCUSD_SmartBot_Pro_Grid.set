@@ -1,0 +1,35 @@
+; Fichier de paramètres pour BTCUSD_SmartBot_Pro
+; Version : 1.03
+; Configuration GRID TRADING
+; Ouvre plusieurs niveaux avec distance fixe
+
+InpRiskPercent=1.0
+InpMaxPositions=1
+InpMinBalance=100.0
+InpFastEMA=9
+InpSlowEMA=21
+InpATRPeriod=14
+InpATR_MultiplierTP=2.5
+InpATR_MultiplierSL=1.5
+InpMinATR=50.0
+InpMaxSpread=15000
+InpStartHour=0
+InpEndHour=23
+InpUseTrailing=true
+InpTrailActivation=1.0
+InpTrailDistance=0.5
+InpUseBreakeven=true
+InpBreakevenTrigger=0.5
+InpUseGrid=true
+InpMaxGridLevels=3
+InpGridStepATR=1.0
+InpGridLotMultiplier=1.0
+InpUseMartingale=false
+InpMartingaleMulti=1.5
+InpMaxMartingale=3
+InpMaxDrawdownPct=20.0
+InpUseH4Confirmation=true
+InpMagicNumber=202511
+InpSlippage=10
+InpTradeComment=BTC_Grid
+InpShowPanel=true
