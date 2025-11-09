@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright "BTCUSD SmartBot Pro"
 #property link      "https://github.com/fred-selest/BTCUSD_SmartBot"
-#property version   "1.01"
+#property version   "1.02"
 #property description "Bot BTCUSD avec stratégie EMA, ATR, Trailing Stop intelligent"
 #property description "Optimisé pour VPS Windows Server 2022"
 
@@ -188,17 +188,17 @@ void OnTick()
    symbolInfo.Refresh();
    symbolInfo.RefreshRates();
 
+   //--- Copier les données des indicateurs AVANT les vérifications
+   if(CopyBuffer(handleEMAFast, 0, 0, 3, emaFastBuffer) < 3) return;
+   if(CopyBuffer(handleEMASlow, 0, 0, 3, emaSlowBuffer) < 3) return;
+   if(CopyBuffer(handleATR, 0, 0, 2, atrBuffer) < 2) return;
+
    //--- Afficher panneau d'informations
    if(InpShowPanel)
       ShowInfoPanel();
 
    //--- Vérifier les filtres
    if(!CheckTradingFilters()) return;
-
-   //--- Copier les données des indicateurs
-   if(CopyBuffer(handleEMAFast, 0, 0, 3, emaFastBuffer) < 3) return;
-   if(CopyBuffer(handleEMASlow, 0, 0, 3, emaSlowBuffer) < 3) return;
-   if(CopyBuffer(handleATR, 0, 0, 2, atrBuffer) < 2) return;
 
    //--- Vérifier confirmation H4
    if(InpUseH4Confirmation)
@@ -261,11 +261,22 @@ bool CheckTradingFilters()
    int spread = (int)symbolInfo.Spread();
    if(spread > InpMaxSpread)
    {
-      Print("⚠️ Spread trop élevé: ", spread, " > ", InpMaxSpread);
+      // Ne pas afficher constamment si le spread est toujours élevé
+      static datetime lastSpreadWarning = 0;
+      if(TimeCurrent() - lastSpreadWarning > 3600) // 1x par heure
+      {
+         Print("⚠️ Spread trop élevé: ", spread, " > ", InpMaxSpread);
+         lastSpreadWarning = TimeCurrent();
+      }
       return false;
    }
 
-   //--- Vérifier l'ATR
+   //--- Vérifier l'ATR (avec sécurité sur le tableau)
+   if(ArraySize(atrBuffer) < 1)
+   {
+      return false; // Données ATR non disponibles
+   }
+
    double currentATR = atrBuffer[0];
    if(currentATR < InpMinATR)
    {
