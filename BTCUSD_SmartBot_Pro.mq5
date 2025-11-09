@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright "BTCUSD SmartBot Pro"
 #property link      "https://github.com/fred-selest/BTCUSD_SmartBot"
-#property version   "1.00"
+#property version   "1.01"
 #property description "Bot BTCUSD avec stratégie EMA, ATR, Trailing Stop intelligent"
 #property description "Optimisé pour VPS Windows Server 2022"
 
@@ -553,8 +553,8 @@ void CreateLabel(string name, int x, int y, string text, color clr, int fontSize
    if(ObjectFind(0, name) < 0)
    {
       ObjectCreate(0, name, OBJ_LABEL, 0, 0, 0);
-      ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_LEFT_UPPER);
-      ObjectSetInteger(0, name, OBJPROP_ANCHOR, ANCHOR_LEFT_UPPER);
+      ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_RIGHT_UPPER);
+      ObjectSetInteger(0, name, OBJPROP_ANCHOR, ANCHOR_RIGHT_UPPER);
       ObjectSetString(0, name, OBJPROP_FONT, font);
       ObjectSetInteger(0, name, OBJPROP_FONTSIZE, fontSize);
    }
