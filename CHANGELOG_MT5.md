@@ -4,6 +4,70 @@ Historique des versions et modifications
 
 ---
 
+## Version 1.06 (2025-11-09)
+
+### 🐛 Correction Critique - Grid Lot Normalization
+
+- ✅ **CORRECTIF MAJEUR : Normalisation incorrecte des lots Grid**
+  - **Problème détecté** : Tous les niveaux Grid avaient le même lot malgré multiplicateur 1.2
+  - **Cause** : `NormalizeDouble(lot, 2)` ne respectait pas le `LotStep` du broker
+  - **Logs v1.05** :
+    ```
+    Grid BUY Level 0 | Lot: 0.01 ✅
+    Grid BUY Level 1 | Lot: 0.01 ❌ (devrait être 0.012 ou 0.02)
+    Grid BUY Level 2 | Lot: 0.01 ❌ (devrait être 0.0144 ou 0.02)
+    ```
+
+### 🔧 Modifications Techniques
+
+**CalculateGridLot()** - Ajout normalisation LotStep :
+```mql5
+// AVANT (v1.05) - INCORRECT
+double lot = baseLot * MathPow(InpGridLotMultiplier, gridLevel);
+return NormalizeDouble(lot, 2);  // 0.012 → 0.01 (mal arrondi)
+
+// APRÈS (v1.06) - CORRECT
+double lot = baseLot * MathPow(InpGridLotMultiplier, gridLevel);
+double lotStep = symbolInfo.LotsStep();
+if(lotStep > 0)
+   lot = MathRound(lot / lotStep) * lotStep;  // Arrondit au plus proche
+return NormalizeDouble(lot, 2);
+```
+
+### 📊 Impact sur le Trading
+
+**Avec LotStep = 0.01 (FxPro standard)** :
+
+| Multiplicateur | Level 0 | Level 1 | Level 2 | Total |
+|----------------|---------|---------|---------|-------|
+| 1.2 (v1.05 bug) | 0.01 | 0.01 | 0.01 | 0.03 |
+| 1.2 (v1.06) | 0.01 | 0.01 | 0.01 | 0.03 ⚠️ |
+| **1.5 (recommandé)** | 0.01 | 0.02 | 0.02 | 0.05 ✅ |
+| **2.0 (agressif)** | 0.01 | 0.02 | 0.04 | 0.07 ✅ |
+
+**Explication** :
+- Avec multiplicateur 1.2 : 0.01 × 1.2 = 0.012 → arrondi à 0.01 (LotStep=0.01)
+- Avec multiplicateur 1.5 : 0.01 × 1.5 = 0.015 → arrondi à 0.02 ✅
+- Avec multiplicateur 2.0 : 0.01 × 2.0 = 0.02 (exact) ✅
+
+### ⚠️ Recommandations Importantes
+
+**Pour que le multiplicateur fonctionne** :
+1. **Utiliser multiplicateur ≥ 1.5** (1.2 est trop faible avec LotStep=0.01)
+2. **OU augmenter le lot de base** (0.02 au lieu de 0.01)
+3. **Tester en DEMO** pour vérifier les lots affichés
+
+**Multiplicateurs recommandés** :
+- **1.5** : Progression modérée (0.01 → 0.02 → 0.02)
+- **2.0** : Progression forte (0.01 → 0.02 → 0.04)
+
+### 📁 Archivage
+
+- Version 1.05 archivée dans `versions/BTCUSD_SmartBot_Pro_v1.05.mq5`
+- Version 1.06 archivée dans `versions/BTCUSD_SmartBot_Pro_v1.06.mq5`
+
+---
+
 ## Version 1.05 (2025-11-09)
 
 ### 🐛 Correction Critique - Grid Lot Multiplier
@@ -371,5 +435,5 @@ Pour toute question sur les versions :
 ---
 
 **Dernière mise à jour** : 2025-11-09
-**Version actuelle** : 1.05
-**Statut** : Stable ✅ (Grid Lot Multiplier corrigé - TESTER EN DEMO avec paramètres réduits)
+**Version actuelle** : 1.06
+**Statut** : Stable ✅ (Grid Lot Normalization corrigé - Utiliser multiplicateur ≥ 1.5)

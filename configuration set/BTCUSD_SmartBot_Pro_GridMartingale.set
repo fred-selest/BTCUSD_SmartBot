@@ -1,5 +1,5 @@
 ; Fichier de paramètres pour BTCUSD_SmartBot_Pro
-; Version : 1.03
+; Version : 1.06
 ; Configuration GRID + MARTINGALE (Avancé)
 ; ⚠️ RISQUE ELEVE - Utiliser avec prudence
 
@@ -23,9 +23,9 @@ InpBreakevenTrigger=0.5
 InpUseGrid=true
 InpMaxGridLevels=3
 InpGridStepATR=1.0
-InpGridLotMultiplier=1.2
+InpGridLotMultiplier=1.5
 InpUseMartingale=true
-InpMartingaleMulti=1.3
+InpMartingaleMulti=1.5
 InpMaxMartingale=2
 InpMaxDrawdownPct=15.0
 InpUseH4Confirmation=false
