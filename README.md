@@ -41,7 +41,7 @@ BTCUSD_SmartBot/
 │   ├── BTCUSD_SmartBot_Pro_v1.05.mq5
 │   └── README.md                # Guide archivage versions
 │
-├── 🤖 BTCUSD_SmartBot_Pro.mq5   # Bot MT5 (version actuelle: 1.05)
+├── 🤖 BTCUSD_SmartBot_Pro.mq5   # Bot MT5 (version actuelle: 1.07)
 ├── 📖 README_MT5.md             # Guide MT5 détaillé
 ├── 📖 GUIDE_INSTALLATION_MT5.md # Installation MT5
 ├── 📖 QUICK_START_MT5.md        # Démarrage rapide MT5
@@ -64,7 +64,7 @@ BTCUSD_SmartBot/
 ### 🖥️ Version MetaTrader 5 - Pour Brokers Forex
 **Fichiers** : `BTCUSD_SmartBot_Pro.mq5` + dossier `configuration set/`
 - ✅ Compatible **VPS Windows Server 2022**
-- ✅ **Grid Trading & Martingale** contrôlés (v1.05)
+- ✅ **Grid Trading & Martingale** contrôlés avec gestion du risque (v1.07)
 - ✅ Interface graphique intégrée
 - ✅ 7 configurations prédéfinies
 - ✅ Système d'archivage de versions
