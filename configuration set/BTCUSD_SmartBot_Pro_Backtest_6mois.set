@@ -1,0 +1,38 @@
+; Configuration optimisée pour backtest sur 6-12 mois
+; Version: 1.05
+; Description: Balance entre nombre de trades et qualité
+
+=== GESTION DU RISQUE ===
+InpRiskPercent=1.0
+InpMaxPositions=1
+InpMinBalance=100.0
+
+=== PARAMETRES STRATEGIE ===
+InpFastEMA=9
+InpSlowEMA=21
+InpATRPeriod=14
+InpATR_MultiplierTP=2.5
+InpATR_MultiplierSL=1.5
+
+=== FILTRES MARCHE ===
+InpMinATR=50.0
+InpMaxSpread=15000
+InpStartHour=0
+InpEndHour=23
+
+=== PROTECTION PROFITS ===
+InpUseTrailing=true
+InpTrailActivation=1.0
+InpTrailDistance=0.5
+InpUseBreakeven=true
+InpBreakevenTrigger=0.5
+
+=== CONFIGURATION ===
+InpUseH4Confirmation=false
+; Désactivé pour obtenir plus de trades sur backtest
+; Réactiver pour trading live si vous voulez plus de qualité
+
+InpMagicNumber=202511
+InpSlippage=10
+InpTradeComment=BTC_Backtest_6M
+InpShowPanel=true
