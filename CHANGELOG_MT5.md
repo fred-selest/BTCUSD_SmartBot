@@ -4,6 +4,97 @@ Historique des versions et modifications
 
 ---
 
+## Version 1.07 (2025-11-10)
+
+### 🚨 Correction CRITIQUE - Grid Risk Management
+
+- ✅ **CORRECTIF MAJEUR : Sur-exposition massive avec Grid activé**
+  - **Problème détecté** : Backtest avec 100k EUR → Stop out en 5h avec perte totale
+  - **Cause** : Le risque n'était PAS ajusté selon le nombre de niveaux Grid
+  - **Backtest v1.06** :
+    ```
+    Grid SELL Level 0 | Lot: 1.1 BTC
+    Grid SELL Level 1 | Lot: 1.65 BTC
+    Grid SELL Level 2 | Lot: 2.48 BTC
+    TOTAL : 5.23 BTC = 638,060 USD d'exposition sur 110k compte
+    → STOP OUT COMPLET
+    ```
+
+### 🔧 Modifications Techniques
+
+**OpenGridLevel()** - Ajustement automatique du risque :
+```mql5
+// AVANT (v1.06) - DANGEREUX
+baseLot = CalculateLotSize(price, sl);  // Risque non ajusté
+
+// APRÈS (v1.07) - SÉCURISÉ
+double adjustedRisk = InpRiskPercent;
+if(InpUseGrid && InpMaxGridLevels > 1)
+{
+   // Diviser le risque par le nombre de niveaux
+   adjustedRisk = InpRiskPercent / InpMaxGridLevels;
+}
+baseLot = CalculateLotSize(adjustedRisk, price, sl);
+```
+
+### 📊 Impact sur le Trading
+
+**Exemple : 100,000 EUR, InpRiskPercent=0.5%, Grid 3 niveaux, Multi 1.5**
+
+| Version | Risque/niveau | Level 0 | Level 1 | Level 2 | Total | Exposition |
+|---------|---------------|---------|---------|---------|-------|------------|
+| **v1.06** | 0.5% | 1.1 | 1.65 | 2.48 | **5.23** | 638k USD ❌ |
+| **v1.07** | 0.17% | 0.37 | 0.55 | 0.83 | **1.75** | 213k USD ✅ |
+
+**Réduction d'exposition : -66% !**
+
+### ⚠️ Impact Important
+
+**Cette correction RÉDUIT drastiquement l'exposition** :
+- v1.06 : Risque réel ~2.6% (5.23 / 2 = 2.6× le risque configuré)
+- v1.07 : Risque réel ~0.5% (conforme à la configuration)
+
+**Pour les utilisateurs de v1.06** :
+1. **URGENT** : Mettre à jour vers v1.07 avant trading live
+2. Si déjà en live : **ARRÊTER** et recompiler avec v1.07
+3. Les lots seront **3× plus petits** (conforme au risque souhaité)
+
+### 📊 Calcul du Risque Ajusté
+
+**Formule v1.07** :
+```
+Risque ajusté = InpRiskPercent / InpMaxGridLevels
+
+Exemples :
+- 0.5% avec 3 niveaux → 0.167% par niveau
+- 1.0% avec 5 niveaux → 0.20% par niveau
+- 2.0% avec 2 niveaux → 1.0% par niveau
+```
+
+**Effet avec multiplicateur 1.5 et 3 niveaux** :
+- Level 0 : 0.167% × 1.0 = 0.167%
+- Level 1 : 0.167% × 1.5 = 0.250%
+- Level 2 : 0.167% × 2.25 = 0.375%
+- **TOTAL : ~0.79%** (proche du risque configuré 0.5%)
+
+### 🎯 Recommandations
+
+**Pour utiliser Grid en sécurité** :
+1. **Toujours tester en DEMO** d'abord
+2. **Capital minimum recommandé** :
+   - 2 niveaux : 1,000 EUR
+   - 3 niveaux : 2,500 EUR
+   - 5 niveaux : 5,000 EUR
+3. **Multiplicateur conservateur** : 1.5 ou 2.0 max
+4. **Surveiller l'exposition totale** affichée dans les logs
+
+### 📁 Archivage
+
+- Version 1.06 archivée dans `versions/BTCUSD_SmartBot_Pro_v1.06.mq5`
+- Version 1.07 archivée dans `versions/BTCUSD_SmartBot_Pro_v1.07.mq5`
+
+---
+
 ## Version 1.06 (2025-11-09)
 
 ### 🐛 Correction Critique - Grid Lot Normalization
@@ -434,6 +525,6 @@ Pour toute question sur les versions :
 
 ---
 
-**Dernière mise à jour** : 2025-11-09
-**Version actuelle** : 1.06
-**Statut** : Stable ✅ (Grid Lot Normalization corrigé - Utiliser multiplicateur ≥ 1.5)
+**Dernière mise à jour** : 2025-11-10
+**Version actuelle** : 1.07
+**Statut** : Stable ✅ (Grid Risk Management corrigé - MISE À JOUR CRITIQUE !)
